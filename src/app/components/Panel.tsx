@@ -6,7 +6,7 @@ import Hello from './Hello'
 import UpdateBanner from './UpdateBanner'
 import MetricsHeader from './MetricsHeader'
 import ProfileMenu from './ProfileMenu'
-import { togglePlugin } from '../actions'
+import { togglePlugin, getAssetContent } from '../actions'
 import type {
   Setup,
   PluginRef,
@@ -281,17 +281,7 @@ function PluginCard({ plugin, disabled, onToggle }: { plugin: PluginRef; disable
           {plugin.provides.length === 0 ? (
             <li className="py-1 text-sm text-[var(--color-muted)]">Nada exposto por este plugin.</li>
           ) : (
-            plugin.provides.map((a) => (
-              <li key={a.source} className="flex items-start gap-2 py-1.5 text-sm">
-                <span className="mt-0.5 shrink-0">
-                  <AssetIcon kind={a.kind} />
-                </span>
-                <div className="min-w-0">
-                  <span className="font-medium">{a.name}</span>
-                  {a.description && <span className="text-[var(--color-muted)]"> — {a.description}</span>}
-                </div>
-              </li>
-            ))
+            plugin.provides.map((a) => <AssetRow key={a.source} ownerKey={plugin.key} asset={a} />)
           )}
         </ul>
       )}
@@ -317,6 +307,52 @@ function Switch({ on, disabled, onChange }: { on: boolean; disabled?: boolean; o
   )
 }
 
+// Linha de asset (skill/command/agent/workflow) que expande e mostra o conteúdo do arquivo.
+function AssetRow({ ownerKey, asset, badge }: { ownerKey: string; asset: ProvidedAsset; badge?: string }) {
+  const [open, setOpen] = useState(false)
+  const [content, setContent] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function toggle() {
+    const next = !open
+    setOpen(next)
+    if (next && content === null) {
+      setLoading(true)
+      try {
+        setContent(await getAssetContent(ownerKey, asset.source))
+      } catch {
+        setContent('')
+      }
+      setLoading(false)
+    }
+  }
+
+  return (
+    <li className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <button onClick={toggle} className="flex w-full items-start gap-2 p-3 text-left text-sm" aria-expanded={open}>
+        <span className="mt-0.5 shrink-0">
+          <AssetIcon kind={asset.kind} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="font-medium">{asset.name}</span>
+          {asset.description && <span className="text-[var(--color-muted)]"> — {asset.description}</span>}
+        </span>
+        {badge && (
+          <span className="shrink-0 rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[11px] text-[var(--color-muted)]">{badge}</span>
+        )}
+        <span className="mt-0.5 shrink-0 text-[var(--color-muted)] transition-transform" style={{ transform: open ? 'rotate(90deg)' : 'none' }}>
+          <Chevron />
+        </span>
+      </button>
+      {open && (
+        <pre className="mx-3 mb-3 max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-[var(--color-surface-2)] p-3 font-mono text-xs">
+          {loading ? 'carregando…' : content || 'sem conteúdo'}
+        </pre>
+      )}
+    </li>
+  )
+}
+
 // ---------------- Skills / Workflows (mesma estrutura) ----------------
 
 function AssetsTab({ setup, kind, title }: { setup: Setup; kind: ProvidedAsset['kind']; title: string }) {
@@ -324,8 +360,8 @@ function AssetsTab({ setup, kind, title }: { setup: Setup; kind: ProvidedAsset['
   const items = useMemo(() => {
     const fromPlugins = setup.plugins
       .filter((p) => p.enabled)
-      .flatMap((p) => p.provides.filter((a) => a.kind === kind).map((a) => ({ ...a, from: p.name })))
-    const authored = setup.authored.filter((a) => a.kind === kind).map((a) => ({ ...a, from: 'você' }))
+      .flatMap((p) => p.provides.filter((a) => a.kind === kind).map((a) => ({ ...a, from: p.name, ownerKey: p.key })))
+    const authored = setup.authored.filter((a) => a.kind === kind).map((a) => ({ ...a, from: 'você', ownerKey: 'authored' }))
     return [...fromPlugins, ...authored]
   }, [setup, kind])
 
@@ -341,16 +377,9 @@ function AssetsTab({ setup, kind, title }: { setup: Setup; kind: ProvidedAsset['
     <div>
       <p className="mb-3 text-sm text-[var(--color-muted)]">{items.length} {title.toLowerCase()} disponíveis</p>
       <SearchBox value={q} onChange={setQ} placeholder={`Buscar ${title.toLowerCase()}…`} />
-      <ul className="cp-stagger grid gap-2 sm:grid-cols-2">
+      <ul className="cp-stagger space-y-2">
         {shown.map((a) => (
-          <li key={`${a.from}-${a.source}`} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-            <div className="flex items-center gap-2">
-              <AssetIcon kind={a.kind} />
-              <span className="font-medium">{a.name}</span>
-              <span className="ml-auto rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[11px] text-[var(--color-muted)]">{a.from}</span>
-            </div>
-            {a.description && <p className="mt-1.5 text-sm text-[var(--color-muted)]">{a.description}</p>}
-          </li>
+          <AssetRow key={`${a.ownerKey}-${a.source}`} ownerKey={a.ownerKey} asset={a} badge={a.from} />
         ))}
       </ul>
     </div>

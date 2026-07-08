@@ -1,7 +1,7 @@
 'use server'
 
 import { setPluginEnabled } from '../core/toggle'
-import { makeStore } from '../adapters/host'
+import { makeStore, readAssetContent } from '../adapters/host'
 import {
   checkForUpdate,
   applyUpdate as runApplyUpdate,
@@ -28,6 +28,11 @@ export async function getUsage(): Promise<UsageMetrics> {
 export async function getUsageSince(since: number): Promise<WindowMetrics> {
   const { records } = await readUsage(since)
   return aggregateUsage(records, { dayStart: since, weekStart: since, h5Start: since }).today
+}
+
+/** Lê o conteúdo de um asset (skill/command/agent/workflow) pra ver na UI. */
+export async function getAssetContent(ownerKey: string, source: string): Promise<string> {
+  return readAssetContent(ownerKey, source)
 }
 
 /** "Tem versão nova?" — usado pela faixa de atualização (estilo app Claude desktop). */

@@ -108,6 +108,36 @@ export async function getContextView(): Promise<{ layers: ContextLayer[]; total:
   return { layers, total: totalTokens(layers) }
 }
 
+/**
+ * Lê o conteúdo de um asset (skill/command/agent/workflow) pra exibir na UI.
+ * `ownerKey` = 'authored' (base ~/.claude) ou a key do plugin (base = installPath dele).
+ * `source` = caminho relativo já sanitizado (ex.: 'skills/foo' ou 'commands/x.md').
+ * Guardas: rejeita '..'; confina dentro da base; skill (dir) → lê SKILL.md; cap 20k.
+ */
+export async function readAssetContent(ownerKey: string, source: string): Promise<string> {
+  if (!source || source.includes('..')) return ''
+  let base: string
+  if (ownerKey === 'authored') {
+    base = path.join(os.homedir(), '.claude')
+  } else {
+    const installed = (await makeStore().readInstalledPlugins()).data as InstalledFile
+    const entry = installed.plugins?.[ownerKey]?.[0]
+    if (!entry?.installPath) return ''
+    base = entry.installPath
+  }
+  const root = path.resolve(base)
+  const abs = path.resolve(root, source)
+  if (abs !== root && !abs.startsWith(root + path.sep)) return '' // sem traversal
+  try {
+    const st = await fs.stat(abs)
+    const target = st.isDirectory() ? path.join(abs, 'SKILL.md') : abs
+    const raw = await fs.readFile(target, 'utf8')
+    return raw.length > 20000 ? raw.slice(0, 20000) + '\n… (cortado)' : raw
+  } catch {
+    return ''
+  }
+}
+
 /** Marketplaces já conhecidos (nome → fonte git), pra montar/planejar bundles. */
 export async function getKnownMarketplaces(): Promise<Record<string, MarketplaceSource>> {
   const store = makeStore()
