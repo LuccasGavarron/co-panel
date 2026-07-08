@@ -101,7 +101,7 @@ export default function Panel({
       <UpdateBanner />
 
       <section className="mt-6">
-        {tab === 'setup' && <MeuSetup setup={setup} />}
+        {tab === 'setup' && <MeuSetup setup={setup} onDiscover={() => go('descobrir')} />}
         {tab === 'contexto' && <Contexto context={context} />}
         {tab === 'bundle' && (
           <Bundle setup={setup} knownMarketplaces={knownMarketplaces} />
@@ -114,7 +114,7 @@ export default function Panel({
 
 // ---------------- Meu setup ----------------
 
-function MeuSetup({ setup }: { setup: Setup }) {
+function MeuSetup({ setup, onDiscover }: { setup: Setup; onDiscover: () => void }) {
   const router = useRouter()
   const [state, setState] = useState(setup.plugins)
   const [pending, start] = useTransition()
@@ -139,8 +139,9 @@ function MeuSetup({ setup }: { setup: Setup }) {
   if (state.length === 0) {
     return (
       <Empty
-        title="Nenhum plugin instalado ainda"
-        hint="Bora começar: vá em Descobrir e adicione um marketplace."
+        title="Nenhum plugin ativo ainda"
+        hint="Aqui é onde você liga e desliga o que o Claude Code usa. Ainda não há nada — comece adicionando uma fonte no Descobrir."
+        action={{ label: 'Ver o Descobrir', onClick: onDiscover }}
       />
     )
   }
@@ -287,7 +288,12 @@ function Switch({
 function Contexto({ context }: { context: { layers: ContextLayer[]; total: number } }) {
   const max = Math.max(1, ...context.layers.map((l) => l.tokens))
   if (context.layers.length === 0) {
-    return <Empty title="Nada no contexto ainda" hint="Adicione um CLAUDE.md global ou ligue skills." />
+    return (
+      <Empty
+        title="Nada no seu contexto ainda"
+        hint="Aqui aparece o que o Claude recebe no prompt (CLAUDE.md, skills, memória) e quanto cada fonte custa em tokens. Ligue skills ou adicione um CLAUDE.md global pra ver."
+      />
+    )
   }
   return (
     <div>
@@ -454,6 +460,18 @@ function ImportReview({
   const risky = plan.risky.hooks.length + plan.risky.mcp.length
   return (
     <div className="mt-4 space-y-3">
+      <p className="text-sm text-[var(--color-muted)]">
+        Li o bundle: <b className="text-[var(--color-fg)]">{plan.pluginsToEnable.length}</b> plugin(s) a
+        ligar, <b className="text-[var(--color-fg)]">{plan.marketplacesToAdd.length}</b> marketplace(s),{' '}
+        <b className="text-[var(--color-fg)]">{plan.authoredToCopy.length}</b> arquivo(s)
+        {risky > 0 && (
+          <>
+            {' '}
+            e <b style={{ color: 'var(--color-danger)' }}>{risky}</b> que roda comando
+          </>
+        )}
+        .
+      </p>
       <ReviewGroup tone="ok" title={`Seguro — ${plan.pluginsToEnable.length} plugin(s) a ligar`}>
         {plan.pluginsToEnable.map((k) => (
           <li key={k}>{k}</li>
@@ -628,11 +646,28 @@ function Banner({ tone, children }: { tone: 'danger'; children: React.ReactNode 
   )
 }
 
-function Empty({ title, hint }: { title: string; hint: string }) {
+function Empty({
+  title,
+  hint,
+  action,
+}: {
+  title: string
+  hint: string
+  action?: { label: string; onClick: () => void }
+}) {
+  // Estado vazio ensina (reel synsation_): diz por que está vazio + o que fazer, sem parecer quebrado.
   return (
     <div className="cp-rise rounded-2xl bg-[var(--color-surface)] p-8 text-center">
       <p className="font-medium">{title}</p>
-      <p className="mt-1 text-sm text-[var(--color-muted)]">{hint}</p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-[var(--color-muted)]">{hint}</p>
+      {action && (
+        <button
+          onClick={action.onClick}
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-accent-fg)]"
+        >
+          {action.label}
+        </button>
+      )}
     </div>
   )
 }
