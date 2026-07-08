@@ -123,6 +123,32 @@ skill/plugin ali reduz o gasto mostrado aqui.
 o system-prompt-base interno/proprietário do harness do Claude Code. O objetivo é entender e
 enxugar **as suas camadas** — que é o que dá pra gerenciar.
 
+## 7.2 Design e movimento (direção visual) — "impecável"
+
+**Norte:** Apple-grade, **dark-first**, premium — inspirado em `apple-hello-effect`,
+`apple-cards-carousel` e no template `Solaris` (shadcn.io). **Motor de UI (decisão do dono):**
+shadcn/ui (Radix) pros primitivos acessíveis + **movimento nativo**; `motion` só se um efeito for
+inviável no nativo.
+
+- **Base visual:** dark-first com light via CSS variables (**Tailwind v4 + OKLCH**, tokens no
+  `@theme`). Tipografia **forte e grande** nos títulos, hierarquia nítida. Espaçamento generoso
+  (respiro Apple). Profundidade sutil — nada de glass/blur exagerado.
+- **Entrada assinatura:** o **"hello" escrito à mão** (SVG `stroke-dashoffset`) no primeiro open /
+  splash — reproduzido **nativo**, com `speed` e `prefers-reduced-motion`.
+- **Cards táteis:** **Descobrir** (e opcionalmente **Contexto**) usam o padrão do
+  apple-cards-carousel — **scroll-snap** horizontal + card que faz **morph** pro detalhe via **View
+  Transitions API**; ícone/imagem blur→nítido; trava de scroll no modal; Esc / clique-fora / X
+  fecham; navegável por teclado.
+- **Micro-interações:** feedback de toque (`:active scale-[0.97]`), toggle com spring sutil,
+  **stagger** em listas (~40–60ms), origem coerente (menu/modal cresce do ponto de origem). Curva
+  padrão `cubic-bezier(0.22,1,0.36,1)`; micro 120–200ms, entrada 200–320ms, nada > 400ms.
+- **Regras herdadas:** só `transform`/`opacity`; `prefers-reduced-motion` sempre; **sem emoji**
+  (ícones SVG do pack); `will-change` só no momento da animação.
+- **Tokens no `@theme`:** durações/curvas recorrentes viram tokens (`--ease-out-expo`,
+  `--duration-fast`) pra consistência entre telas.
+- **Reels do Instagram:** **pendente** — o dono descreve a vibe (ou ficam como referência de
+  *sensação*, não de tela). Não consigo assistir vídeo atrás de login.
+
 ## 8. Robustez e segurança (onde NÃO somos preguiçosos)
 
 Isto escreve na config real do Claude Code — a barra aqui é máxima.
@@ -176,10 +202,12 @@ auto-update (Squirrel/electron-updater etc.).
 
 ## 11. Stack
 
-Next 16 (App Router) + React 19 + Tailwind v4 + TypeScript. **Server actions** pra acesso ao fs
-(rodam na máquina do usuário). **Zod** pra validar bundle/config. **Sem** banco, **sem** auth,
-**sem** dependência de animação. O repo nasce com seu próprio **CLAUDE.md** (regras de arquitetura
-adaptadas desta spec).
+Next 16 (App Router) + React 19 + **Tailwind v4 (OKLCH, tokens `@theme`)** + TypeScript. **Server
+actions** pra acesso ao fs (rodam na máquina do usuário). **Zod** pra validar bundle/config.
+**shadcn/ui (Radix)** pros primitivos acessíveis (dialog, tabs, toggle) + **View Transitions API**
+e Web Animations pro movimento; `motion` **só** entra se um efeito for inviável nativo (decisão por
+efeito, não upfront). **Sem** banco, **sem** auth. O repo nasce com seu próprio **CLAUDE.md**
+(regras de arquitetura adaptadas desta spec).
 
 ## 12. Testes
 
@@ -225,3 +253,7 @@ seu setup do Claude Code"*.
 - **Aba Contexto** pra entender "o que o Claude recebe de prompt" com gasto de tokens por fonte;
   **limite honesto:** não mostra o system-prompt-base interno do harness, só as camadas que o
   dono controla por arquivo. *(Pedido do dono.)*
+- **Design impecável, dark-first Apple-grade** (refs shadcn.io: hello-effect, cards-carousel,
+  Solaris). **Motor de UI = meio-termo:** shadcn/ui (Radix) + movimento nativo (SVG stroke, View
+  Transitions), `motion` só se inviável. *(Decisão do dono; respeita a intenção da regra
+  "sem lib de animação" sem abrir mão do polimento.)* Reels do Instagram: pendente de descrição.
