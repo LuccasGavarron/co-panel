@@ -1,7 +1,7 @@
 // Modelo de domínio do co-panel. Puro: sem fs, sem Next.
 
 export type Scope = 'user' | 'project'
-export type AssetKind = 'skill' | 'command' | 'agent' | 'hook' | 'mcp'
+export type AssetKind = 'skill' | 'command' | 'agent' | 'hook' | 'mcp' | 'workflow'
 
 /** Uma capacidade que um plugin traz, ou que o usuário escreveu. */
 export interface ProvidedAsset {

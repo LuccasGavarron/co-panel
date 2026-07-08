@@ -5,9 +5,19 @@ import { useRouter } from 'next/navigation'
 import { buildBundle, validateBundle, planImport, type ImportPlan } from '../../core/bundle'
 import type { Setup, MarketplaceSource } from '../../core/types'
 import { enablePlugins } from '../actions'
-import { Dots, Download, Upload, Check, Warn, X } from './icons'
+import { Download, Upload, Check, Warn, X } from './icons'
+import {
+  type Profile,
+  readProfiles,
+  writeProfiles,
+  readActiveId,
+  writeActiveId,
+  newProfileId,
+  enabledKeys,
+} from '../lib/profiles'
 
-// Menu ⋮ (canto superior direito): exportar/importar o "perfil" (bundle) — funcional.
+// Seletor de perfis (canto superior direito): troca o conjunto de plugins ligados;
+// mantém o exportar/importar de perfil (bundle) com revisão de segurança.
 export default function ProfileMenu({
   setup,
   knownMarketplaces,
@@ -19,9 +29,31 @@ export default function ProfileMenu({
   const [plan, setPlan] = useState<ImportPlan | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [pending, start] = useTransition()
+  // Estado começa nulo e é preenchido no client no mount (evita mismatch de hidratação).
+  const [profiles, setProfiles] = useState<Profile[] | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+
+  // Lê os perfis no mount; se vazio, cria 'Padrão' com o estado atual de plugins.
+  useEffect(() => {
+    let list = readProfiles()
+    let id = readActiveId()
+    if (list.length === 0) {
+      const def: Profile = { id: newProfileId(), name: 'Padrão', enabledPlugins: currentEnabled() }
+      list = [def]
+      id = def.id
+      writeProfiles(list)
+      writeActiveId(id)
+    } else if (!id || !list.some((p) => p.id === id)) {
+      id = list[0].id
+      writeActiveId(id)
+    }
+    setProfiles(list)
+    setActiveId(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!menu) return
@@ -31,6 +63,55 @@ export default function ProfileMenu({
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [menu])
+
+  const active = profiles?.find((p) => p.id === activeId) ?? null
+
+  /** Snapshot de quais plugins estão ligados agora (derivado do setup). */
+  function currentEnabled(): Record<string, boolean> {
+    return Object.fromEntries(setup.plugins.map((p) => [p.key, p.enabled]))
+  }
+
+  function flash(msg: string, ms = 2500) {
+    setToast(msg)
+    setTimeout(() => setToast(null), ms)
+  }
+
+  /** Torna o perfil ativo e aplica os plugins que ele liga. */
+  function switchProfile(p: Profile) {
+    setMenu(false)
+    writeActiveId(p.id)
+    setActiveId(p.id)
+    start(async () => {
+      // Só liga os que o perfil pede.
+      // TODO: desligar os que não estão no perfil precisa de uma action setEnabledPlugins
+      const res = await enablePlugins(enabledKeys(p))
+      if (res.ok) router.refresh()
+      else flash(res.error, 3500)
+    })
+  }
+
+  function renameProfile() {
+    setMenu(false)
+    if (!active || !profiles) return
+    const name = window.prompt('Renomear perfil', active.name)?.trim()
+    if (!name) return
+    const list = profiles.map((p) => (p.id === active.id ? { ...p, name } : p))
+    writeProfiles(list)
+    setProfiles(list)
+  }
+
+  function newProfile() {
+    setMenu(false)
+    const name = window.prompt('Nome do novo perfil')?.trim()
+    if (!name) return
+    // Snapshot do estado atual — a config já bate com ele, então não precisa aplicar.
+    const p: Profile = { id: newProfileId(), name, enabledPlugins: currentEnabled() }
+    const list = [...(profiles ?? []), p]
+    writeProfiles(list)
+    writeActiveId(p.id)
+    setProfiles(list)
+    setActiveId(p.id)
+  }
 
   function exportProfile() {
     setMenu(false)
@@ -55,10 +136,19 @@ export default function ProfileMenu({
     if (!f) return
     try {
       const bundle = validateBundle(JSON.parse(await f.text()))
+      const name = window.prompt('Nome do perfil importado', bundle.createdWith)?.trim()
+      if (!name) return
+      // Cria o perfil com o enabledPlugins do bundle e torna-o ativo já.
+      const p: Profile = { id: newProfileId(), name, enabledPlugins: bundle.enabledPlugins }
+      const list = [...(profiles ?? []), p]
+      writeProfiles(list)
+      writeActiveId(p.id)
+      setProfiles(list)
+      setActiveId(p.id)
+      // Mostra a revisão de segurança; hooks/MCP nunca auto-aplicam.
       setPlan(planImport(bundle, setup, knownMarketplaces))
     } catch {
-      setToast('Arquivo inválido — não parece um perfil do co-panel.')
-      setTimeout(() => setToast(null), 3000)
+      flash('Arquivo inválido — não parece um perfil do co-panel.', 3000)
     }
   }
 
@@ -68,12 +158,10 @@ export default function ProfileMenu({
       const res = await enablePlugins(plan.pluginsToEnable)
       if (res.ok) {
         setPlan(null)
-        setToast('Perfil aplicado.')
-        setTimeout(() => setToast(null), 2500)
+        flash('Perfil aplicado.')
         router.refresh()
       } else {
-        setToast(res.error)
-        setTimeout(() => setToast(null), 3500)
+        flash(res.error, 3500)
       }
     })
   }
@@ -81,19 +169,57 @@ export default function ProfileMenu({
   const item =
     'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-left hover:bg-[var(--color-surface-2)]'
 
+  // Antes de carregar do localStorage não há perfil — reserva o espaço do avatar
+  // sem interação (render idêntico no server e no primeiro client, sem mismatch).
+  if (!active) {
+    return <div className="size-9 rounded-full bg-[var(--color-surface-2)]" aria-hidden />
+  }
+
+  const initial = (active.name.trim()[0] ?? '?').toUpperCase()
+
   return (
     <>
       <div className="relative" ref={wrapRef}>
         <button
           onClick={() => setMenu((m) => !m)}
-          aria-label="Perfil — exportar ou importar"
+          aria-label={`Perfil ativo: ${active.name}. Trocar perfil`}
+          aria-haspopup="menu"
           aria-expanded={menu}
-          className="grid size-9 place-items-center rounded-xl text-[var(--color-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-fg)]"
+          className="flex items-center gap-2 rounded-xl p-1 pr-2 hover:bg-[var(--color-surface-2)]"
         >
-          <Dots />
+          <span className="grid size-9 place-items-center rounded-full bg-[var(--color-accent)] text-sm font-semibold text-[var(--color-accent-fg)]">
+            {initial}
+          </span>
+          <span className="text-sm">{active.name}</span>
         </button>
         {menu && (
-          <div className="absolute right-0 z-30 mt-1 w-52 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-xl">
+          <div
+            role="menu"
+            className="absolute right-0 z-30 mt-1 w-56 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-xl"
+          >
+            {profiles?.map((p) => (
+              <button
+                key={p.id}
+                role="menuitemradio"
+                aria-checked={p.id === activeId}
+                onClick={() => switchProfile(p)}
+                className={item}
+              >
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent-fg)]">
+                  {(p.name.trim()[0] ?? '?').toUpperCase()}
+                </span>
+                <span className="flex-1 truncate">{p.name}</span>
+                {p.id === activeId && <Check />}
+              </button>
+            ))}
+            <div className="my-1 h-px bg-[var(--color-border)]" />
+            <button onClick={renameProfile} className={item}>
+              Renomear perfil
+            </button>
+            <button onClick={newProfile} className={item}>
+              Novo perfil
+            </button>
+            <div className="my-1 h-px bg-[var(--color-border)]" />
             <button onClick={exportProfile} className={item}>
               <Download /> Exportar perfil
             </button>

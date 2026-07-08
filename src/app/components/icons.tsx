@@ -90,6 +90,19 @@ export const Wrench = (p: SVGProps<SVGSVGElement>) => (
     <path d="M15 6a4 4 0 0 0-5.3 5.3L4 17l3 3 5.7-5.7A4 4 0 0 0 18 9l-2.2 2.2-2-2z" />
   </Base>
 )
+export const Flow = (p: SVGProps<SVGSVGElement>) => (
+  <Base {...p}>
+    <circle cx="6" cy="6" r="2.2" />
+    <circle cx="18" cy="6" r="2.2" />
+    <circle cx="12" cy="18" r="2.2" />
+    <path d="M8 6h8M7.4 8l3.4 8M16.6 8l-3.4 8" />
+  </Base>
+)
+export const Gauge = (p: SVGProps<SVGSVGElement>) => (
+  <Base {...p}>
+    <path d="M3 12h4l3 7 4-14 3 7h4" />
+  </Base>
+)
 export const Dots = (p: SVGProps<SVGSVGElement>) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...p}>
     <circle cx="12" cy="5" r="1.7" />

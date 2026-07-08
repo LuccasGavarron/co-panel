@@ -9,8 +9,20 @@ import {
   type UpdateResult,
 } from '../adapters/updater'
 import { ExternalChangeError } from '../ports/config-store'
+import { readUsage } from '../adapters/usage'
+import { aggregateUsage, type UsageMetrics } from '../core/usage-metrics'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
+
+/** Métricas de uso agregadas (hoje / 7 dias / 5h) — usado pelo polling ao vivo. */
+export async function getUsage(): Promise<UsageMetrics> {
+  const now = Date.now()
+  const day = new Date(now); day.setHours(0,0,0,0)
+  const weekStart = now - 7*24*3600_000
+  const windows = { dayStart: day.getTime(), weekStart, h5Start: now - 5*3600_000 }
+  const { records } = await readUsage(weekStart)
+  return aggregateUsage(records, windows)
+}
 
 /** "Tem versão nova?" — usado pela faixa de atualização (estilo app Claude desktop). */
 export async function checkUpdate(): Promise<UpdateStatus> {

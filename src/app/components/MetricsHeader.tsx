@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { UsageMetrics, WindowMetrics, Breakdown } from '../../core/usage-metrics'
+import { getUsage } from '../actions'
 
 function fmt(n: number): string {
   if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M'
@@ -13,15 +14,28 @@ type Key = 'today' | 'week' | 'last5h'
 
 export default function MetricsHeader({ usage }: { usage: UsageMetrics }) {
   const [open, setOpen] = useState<Key | null>('today')
+  const [live, setLive] = useState<UsageMetrics>(usage)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      getUsage().then(setLive).catch(() => {}) // ponytail: silencia falha de poll, próximo tick tenta de novo
+    }, 5000)
+    return () => clearInterval(id)
+  }, [])
+
   const tiles: { key: Key; label: string; m: WindowMetrics }[] = [
-    { key: 'today', label: 'Hoje', m: usage.today },
-    { key: 'week', label: '7 dias', m: usage.week },
-    { key: 'last5h', label: 'Últimas 5h', m: usage.last5h },
+    { key: 'today', label: 'Hoje', m: live.today },
+    { key: 'week', label: '7 dias', m: live.week },
+    { key: 'last5h', label: 'Últimas 5h', m: live.last5h },
   ]
   const active = tiles.find((t) => t.key === open)
 
   return (
     <div className="mb-5">
+      <div className="mb-2 flex items-center gap-1.5 px-1">
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)] animate-pulse motion-reduce:animate-none" />
+        <span className="text-[11px] text-[var(--color-muted)]">ao vivo</span>
+      </div>
       <div className="grid grid-cols-3 gap-2">
         {tiles.map((t) => (
           <button

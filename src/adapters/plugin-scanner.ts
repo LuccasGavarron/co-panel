@@ -59,6 +59,16 @@ async function scanMd(root: string, sub: string, kind: AssetKind): Promise<Provi
   return out
 }
 
+// Workflows são arquivos .js/.ts/.md numa pasta; nome = arquivo sem extensão.
+async function scanWorkflows(root: string): Promise<ProvidedAsset[]> {
+  const out: ProvidedAsset[] = []
+  for (const e of await listDir(path.join(root, 'workflows'))) {
+    if (!/\.(js|ts|md)$/.test(e)) continue
+    out.push({ kind: 'workflow', name: e.replace(/\.(js|ts|md)$/, ''), source: path.join('workflows', e) })
+  }
+  return out
+}
+
 /**
  * Monta a lista de plugins instalados com o que cada um fornece (skills/commands/agents)
  * e se está ligado (a partir de enabledPlugins do settings.json).
@@ -77,6 +87,7 @@ export async function scanPlugins(
       ...(await scanSkills(entry.installPath)),
       ...(await scanMd(entry.installPath, 'commands', 'command')),
       ...(await scanMd(entry.installPath, 'agents', 'agent')),
+      ...(await scanWorkflows(entry.installPath)),
     ]
     refs.push({
       key,

@@ -68,6 +68,10 @@ async function readAuthored(p: ClaudePaths): Promise<ProvidedAsset[]> {
       out.push({ kind, name: fm.name ?? e.replace(/\.md$/, ''), description: fm.description, source: `${sub}/${e}` })
     }
   }
+  for (const e of await listDir(p.authoredDirs.workflows)) {
+    if (!/\.(js|ts|md)$/.test(e)) continue
+    out.push({ kind: 'workflow', name: e.replace(/\.(js|ts|md)$/, ''), source: `workflows/${e}` })
+  }
   return out
 }
 
