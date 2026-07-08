@@ -1,21 +1,20 @@
 @import "tailwindcss";
 
 /*
-  co-panel — base visual dark-first, Apple-grade.
-  Tokens em OKLCH no @theme do Tailwind v4. Durações/curvas viram tokens
-  pra manter consistência de movimento entre telas.
+  co-panel — identidade nas cores do Claude: coral/clay + creme + navy.
+  Dark-first (warm), com tema claro creme. Tokens em OKLCH no @theme do Tailwind v4.
 */
 @theme {
-  --color-bg: oklch(0.16 0.012 265);
-  --color-surface: oklch(0.2 0.014 265);
-  --color-surface-2: oklch(0.24 0.016 265);
-  --color-border: oklch(0.32 0.016 265);
-  --color-fg: oklch(0.96 0.005 265);
-  --color-muted: oklch(0.72 0.014 265);
-  --color-accent: oklch(0.72 0.15 250);
-  --color-accent-fg: oklch(0.98 0.01 250);
-  --color-danger: oklch(0.68 0.19 25);
-  --color-ok: oklch(0.72 0.15 155);
+  --color-bg: oklch(0.17 0.007 60);
+  --color-surface: oklch(0.21 0.009 60);
+  --color-surface-2: oklch(0.25 0.011 60);
+  --color-border: oklch(0.31 0.011 60);
+  --color-fg: oklch(0.96 0.006 70);
+  --color-muted: oklch(0.71 0.012 60);
+  --color-accent: oklch(0.7 0.13 42); /* coral/clay do Claude */
+  --color-accent-fg: oklch(0.99 0.01 75);
+  --color-danger: oklch(0.64 0.19 25);
+  --color-ok: oklch(0.7 0.12 150);
 
   --radius-card: 16px;
 
@@ -24,18 +23,18 @@
   --duration-panel: 260ms;
 }
 
-/* Tema claro: o viewer/toggle carrega estas variáveis. Dark é o default. */
 :root {
   color-scheme: dark;
 }
+/* Tema claro: creme + navy (paleta editorial do Claude). Coral herdado. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --color-bg: oklch(0.98 0.004 265);
-  --color-surface: oklch(1 0 0);
-  --color-surface-2: oklch(0.96 0.006 265);
-  --color-border: oklch(0.9 0.008 265);
-  --color-fg: oklch(0.2 0.01 265);
-  --color-muted: oklch(0.5 0.014 265);
+  --color-bg: oklch(0.96 0.014 75);
+  --color-surface: oklch(0.99 0.008 75);
+  --color-surface-2: oklch(0.93 0.014 75);
+  --color-border: oklch(0.87 0.018 75);
+  --color-fg: oklch(0.3 0.02 260);
+  --color-muted: oklch(0.52 0.02 60);
 }
 
 html,
@@ -45,6 +44,14 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
     system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Wordmark com cara — serifa editorial (na linha do display serif do Claude),
+   zero dependência (stack de sistema). */
+.wordmark {
+  font-family: "Hoefler Text", "Iowan Old Style", Cambria, Georgia, ui-serif, serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 /* Feedback de toque imediato em tudo que é clicável. */
@@ -60,9 +67,7 @@ body {
   }
 }
 
-/* Entrada assinatura: floreio desenhado (stroke-dashoffset) + wordmark subindo.
-   Mesmo mecanismo do apple-hello-effect; trocar por glifos de "hello" é só
-   substituir o path e manter o pathLength. */
+/* Entrada assinatura: floreio desenhado (stroke-dashoffset) + wordmark subindo. */
 @keyframes cp-draw {
   from {
     stroke-dashoffset: 1;
@@ -89,7 +94,6 @@ body {
 .cp-rise {
   animation: cp-rise var(--duration-panel) var(--ease-out-expo) both;
 }
-/* Entrada em cascata pra listas. */
 .cp-stagger > * {
   animation: cp-rise var(--duration-panel) var(--ease-out-expo) both;
 }

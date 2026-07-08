@@ -4,8 +4,8 @@ import { useEffect, useState, useTransition } from 'react'
 import { checkUpdate, applyUpdate } from '../actions'
 import { Download, Check, Warn } from './icons'
 
-// Faixa "nova versão" estilo app Claude desktop: checa via git em segundo plano e
-// atualiza com um clique (git pull + build). Offline/sem origin → não aparece.
+// Aviso de "nova versão" no rodapé da sidebar (compacto). Checa via git; offline/sem
+// origin → não aparece. Atualiza com um clique (git pull + build).
 export default function UpdateBanner() {
   const [behind, setBehind] = useState(0)
   const [state, setState] = useState<'idle' | 'done' | 'error'>('idle')
@@ -38,29 +38,29 @@ export default function UpdateBanner() {
   const tone = state === 'error' ? 'var(--color-danger)' : 'var(--color-accent)'
   return (
     <div
-      className="cp-rise mb-2 flex flex-wrap items-center gap-3 rounded-xl px-3 py-2.5 text-sm"
-      style={{ background: `color-mix(in oklch, ${tone} 15%, transparent)`, color: tone }}
+      className="cp-rise mx-1 mb-2 rounded-xl px-3 py-2.5 text-xs"
+      style={{ background: `color-mix(in oklch, ${tone} 14%, transparent)`, color: tone }}
     >
       {state === 'done' ? (
-        <span className="flex items-center gap-2 font-medium">
-          <Check /> {msg}
+        <span className="flex items-center gap-1.5 font-medium">
+          <Check /> Atualizado — reabra o app
         </span>
       ) : state === 'error' ? (
-        <span className="flex items-center gap-2 font-medium">
-          <Warn /> Falha ao atualizar: {msg}
+        <span className="flex items-start gap-1.5 font-medium">
+          <Warn /> Falha ao atualizar
         </span>
       ) : (
         <>
-          <span className="font-medium">
-            Nova versão disponível ({behind} commit{behind > 1 ? 's' : ''}).
-          </span>
+          <div className="font-medium">
+            Nova versão ({behind} commit{behind > 1 ? 's' : ''})
+          </div>
           <button
             onClick={update}
             disabled={pending}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-accent-fg)] disabled:opacity-60"
+            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-2.5 py-1 font-semibold text-[var(--color-accent-fg)] disabled:opacity-60"
           >
             <Download />
-            {pending ? 'atualizando…' : 'Atualizar agora'}
+            {pending ? 'atualizando…' : 'Atualizar'}
           </button>
         </>
       )}

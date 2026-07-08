@@ -96,9 +96,12 @@ export default function Panel({
             </button>
           ))}
         </nav>
-        <div className="mt-auto flex items-center justify-between px-2 pt-4 text-xs text-[var(--color-muted)]">
-          <span>local · sem nuvem</span>
-          <span>v{appVersion}</span>
+        <div className="mt-auto pt-4">
+          <UpdateBanner />
+          <div className="flex items-center justify-between px-2 pt-1 text-xs text-[var(--color-muted)]">
+            <span>local · sem nuvem</span>
+            <span>v{appVersion}</span>
+          </div>
         </div>
       </aside>
 
@@ -129,7 +132,6 @@ export default function Panel({
         </div>
 
         <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-6">
-          <UpdateBanner />
           <section className="mt-4">
             {tab === 'setup' && <MeuSetup setup={setup} onDiscover={() => go('descobrir')} />}
             {tab === 'contexto' && <Contexto context={context} />}
