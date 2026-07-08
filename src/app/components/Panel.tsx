@@ -282,10 +282,14 @@ function PluginCard({ plugin, disabled, onToggle }: { plugin: PluginRef; disable
             <li className="py-1 text-sm text-[var(--color-muted)]">Nada exposto por este plugin.</li>
           ) : (
             plugin.provides.map((a) => (
-              <li key={a.source} className="flex items-center gap-2 py-1 text-sm">
-                <AssetIcon kind={a.kind} />
-                <span className="font-medium">{a.name}</span>
-                {a.description && <span className="truncate text-[var(--color-muted)]">— {a.description}</span>}
+              <li key={a.source} className="flex items-start gap-2 py-1.5 text-sm">
+                <span className="mt-0.5 shrink-0">
+                  <AssetIcon kind={a.kind} />
+                </span>
+                <div className="min-w-0">
+                  <span className="font-medium">{a.name}</span>
+                  {a.description && <span className="text-[var(--color-muted)]"> — {a.description}</span>}
+                </div>
               </li>
             ))
           )}
