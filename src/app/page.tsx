@@ -1,6 +1,7 @@
 import { getSetup, getContextView, getKnownMarketplaces } from '../adapters/host'
 import Panel from './components/Panel'
 import marketplaces from './data/marketplaces.json'
+import pkg from '../../package.json'
 
 // Lê a config VIVA do usuário a cada carga (nunca cacheia no build) — é uma ferramenta local.
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,7 @@ export default async function Home() {
       context={context}
       marketplaces={marketplaces}
       knownMarketplaces={knownMarketplaces}
+      appVersion={pkg.version}
     />
   )
 }

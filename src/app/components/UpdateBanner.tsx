@@ -1,13 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { checkUpdate } from '../actions'
+import { useEffect, useState, useTransition } from 'react'
+import { checkUpdate, applyUpdate } from '../actions'
+import { Download, Check, Warn } from './icons'
 
-// Faixa "nova versão" estilo app Claude desktop. Checa via git em segundo plano;
-// offline/sem origin → não aparece. Atualizar é 1 comando (seguro, sem auto-rebuild frágil).
+// Faixa "nova versão" estilo app Claude desktop: checa via git em segundo plano e
+// atualiza com um clique (git pull + build). Offline/sem origin → não aparece.
 export default function UpdateBanner() {
   const [behind, setBehind] = useState(0)
-  const [copied, setCopied] = useState(false)
+  const [state, setState] = useState<'idle' | 'done' | 'error'>('idle')
+  const [msg, setMsg] = useState('')
+  const [pending, start] = useTransition()
 
   useEffect(() => {
     let alive = true
@@ -21,29 +24,46 @@ export default function UpdateBanner() {
     }
   }, [])
 
-  if (behind === 0) return null
-  const cmd = 'git pull && npm install && npm run build'
+  if (behind === 0 && state === 'idle') return null
+
+  function update() {
+    start(async () => {
+      const res = await applyUpdate()
+      setState(res.ok ? 'done' : 'error')
+      setMsg(res.message)
+      if (res.ok) setBehind(0)
+    })
+  }
+
+  const tone = state === 'error' ? 'var(--color-danger)' : 'var(--color-accent)'
   return (
     <div
-      className="cp-rise mt-4 flex flex-wrap items-center gap-2 rounded-xl px-3 py-2 text-sm"
-      style={{
-        background: 'color-mix(in oklch, var(--color-accent) 15%, transparent)',
-        color: 'var(--color-accent)',
-      }}
+      className="cp-rise mb-2 flex flex-wrap items-center gap-3 rounded-xl px-3 py-2.5 text-sm"
+      style={{ background: `color-mix(in oklch, ${tone} 15%, transparent)`, color: tone }}
     >
-      <span className="font-medium">
-        Nova versão disponível ({behind} commit{behind > 1 ? 's' : ''} atrás).
-      </span>
-      <button
-        onClick={() => {
-          navigator.clipboard?.writeText(cmd)
-          setCopied(true)
-          setTimeout(() => setCopied(false), 1200)
-        }}
-        className="rounded-lg bg-[var(--color-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--color-fg)]"
-      >
-        {copied ? 'copiado!' : 'copiar: git pull && build'}
-      </button>
+      {state === 'done' ? (
+        <span className="flex items-center gap-2 font-medium">
+          <Check /> {msg}
+        </span>
+      ) : state === 'error' ? (
+        <span className="flex items-center gap-2 font-medium">
+          <Warn /> Falha ao atualizar: {msg}
+        </span>
+      ) : (
+        <>
+          <span className="font-medium">
+            Nova versão disponível ({behind} commit{behind > 1 ? 's' : ''}).
+          </span>
+          <button
+            onClick={update}
+            disabled={pending}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-accent-fg)] disabled:opacity-60"
+          >
+            <Download />
+            {pending ? 'atualizando…' : 'Atualizar agora'}
+          </button>
+        </>
+      )}
     </div>
   )
 }

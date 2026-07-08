@@ -57,11 +57,13 @@ export default function Panel({
   context,
   marketplaces,
   knownMarketplaces,
+  appVersion,
 }: {
   setup: Setup
   context: { layers: ContextLayer[]; total: number }
   marketplaces: Discover[]
   knownMarketplaces: Record<string, MarketplaceSource>
+  appVersion: string
 }) {
   const [tab, setTab] = useState<Tab>('setup')
 
@@ -72,43 +74,71 @@ export default function Panel({
     else setTab(next)
   }
 
+  const navBtn = (active: boolean) =>
+    `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+      active
+        ? 'bg-[var(--color-surface-2)] text-[var(--color-fg)]'
+        : 'text-[var(--color-muted)] hover:text-[var(--color-fg)]'
+    }`
+
   return (
-    <main className="mx-auto min-h-dvh max-w-4xl px-4 pb-24 pt-6">
-      <header className="flex items-center justify-between">
-        <Hello />
-        <span className="text-xs text-[var(--color-muted)]">local · sem nuvem</span>
-      </header>
+    <div className="flex min-h-dvh">
+      {/* Sidebar — desktop */}
+      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] p-3 sm:flex">
+        <div className="px-1 pb-5 pt-1">
+          <Hello />
+        </div>
+        <nav className="flex flex-col gap-1" role="tablist" aria-label="Seções">
+          {TABS.map(({ id, label, Icon }) => (
+            <button key={id} role="tab" aria-selected={tab === id} onClick={() => go(id)} className={navBtn(tab === id)}>
+              <Icon />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="mt-auto flex items-center justify-between px-2 pt-4 text-xs text-[var(--color-muted)]">
+          <span>local · sem nuvem</span>
+          <span>v{appVersion}</span>
+        </div>
+      </aside>
 
-      <nav className="mt-6 flex gap-1 rounded-2xl bg-[var(--color-surface)] p-1" role="tablist">
-        {TABS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => go(id)}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
-              tab === id
-                ? 'bg-[var(--color-surface-2)] text-[var(--color-fg)]'
-                : 'text-[var(--color-muted)] hover:text-[var(--color-fg)]'
-            }`}
-          >
-            <Icon />
-            <span className="hidden sm:inline">{label}</span>
-          </button>
-        ))}
-      </nav>
+      {/* Conteúdo */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Header + nav — mobile */}
+        <div className="sm:hidden">
+          <header className="flex items-center justify-between border-b border-[var(--color-border)] p-3">
+            <Hello />
+            <span className="text-xs text-[var(--color-muted)]">local</span>
+          </header>
+          <nav className="flex gap-1 overflow-x-auto border-b border-[var(--color-border)] p-2" role="tablist">
+            {TABS.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={tab === id}
+                onClick={() => go(id)}
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                  tab === id ? 'bg-[var(--color-surface-2)] text-[var(--color-fg)]' : 'text-[var(--color-muted)]'
+                }`}
+              >
+                <Icon />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
 
-      <UpdateBanner />
-
-      <section className="mt-6">
-        {tab === 'setup' && <MeuSetup setup={setup} onDiscover={() => go('descobrir')} />}
-        {tab === 'contexto' && <Contexto context={context} />}
-        {tab === 'bundle' && (
-          <Bundle setup={setup} knownMarketplaces={knownMarketplaces} />
-        )}
-        {tab === 'descobrir' && <Descobrir marketplaces={marketplaces} />}
-      </section>
-    </main>
+        <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-6">
+          <UpdateBanner />
+          <section className="mt-4">
+            {tab === 'setup' && <MeuSetup setup={setup} onDiscover={() => go('descobrir')} />}
+            {tab === 'contexto' && <Contexto context={context} />}
+            {tab === 'bundle' && <Bundle setup={setup} knownMarketplaces={knownMarketplaces} />}
+            {tab === 'descobrir' && <Descobrir marketplaces={marketplaces} />}
+          </section>
+        </main>
+      </div>
+    </div>
   )
 }
 
@@ -567,25 +597,32 @@ function DiscoverCard({ m }: { m: Discover }) {
   const [copied, setCopied] = useState(false)
   const cmd = m.repo ? `claude plugin marketplace add ${m.repo}` : null
   return (
-    <article className="w-72 shrink-0 snap-start rounded-2xl bg-[var(--color-surface)] p-4">
+    <article className="flex w-72 shrink-0 snap-start flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="flex items-center gap-2">
-        <Compass />
+        <span className="text-[var(--color-muted)]">
+          <Compass />
+        </span>
         <h3 className="font-semibold">{m.name}</h3>
       </div>
-      <p className="mt-2 min-h-16 text-sm text-[var(--color-muted)]">{m.description}</p>
-      <div className="mt-2 flex flex-wrap gap-1">
+      <p className="mt-2 text-sm text-[var(--color-muted)]">{m.description}</p>
+      {/* tags = rótulos com contorno (não parecem clicáveis) */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
         {m.tags.map((t) => (
-          <span key={t} className="rounded-full bg-[var(--color-surface-2)] px-2 py-0.5 text-xs text-[var(--color-muted)]">
+          <span
+            key={t}
+            className="rounded-full border border-[var(--color-border)] px-2 py-0.5 text-[11px] uppercase tracking-wide text-[var(--color-muted)]"
+          >
             {t}
           </span>
         ))}
       </div>
-      <div className="mt-3 flex items-center gap-2">
+      {/* ações = botões de verdade (peso, cor, ícone) */}
+      <div className="mt-4 flex items-center gap-2">
         <a
           href={m.url}
           target="_blank"
           rel="noreferrer"
-          className="rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-medium"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-3 py-2 text-xs font-semibold text-[var(--color-accent-fg)] transition-opacity hover:opacity-90"
         >
           Abrir
         </a>
@@ -596,9 +633,15 @@ function DiscoverCard({ m }: { m: Discover }) {
               setCopied(true)
               setTimeout(() => setCopied(false), 1200)
             }}
-            className="rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-medium"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-xs font-medium text-[var(--color-fg)] transition-colors hover:border-[var(--color-muted)]"
           >
-            {copied ? 'copiado!' : 'copiar comando de adicionar'}
+            {copied ? (
+              <>
+                <Check /> copiado
+              </>
+            ) : (
+              'copiar comando'
+            )}
           </button>
         )}
       </div>
