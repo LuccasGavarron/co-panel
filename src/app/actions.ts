@@ -2,9 +2,15 @@
 
 import { setPluginEnabled } from '../core/toggle'
 import { makeStore } from '../adapters/host'
+import { checkForUpdate, type UpdateStatus } from '../adapters/updater'
 import { ExternalChangeError } from '../ports/config-store'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
+
+/** "Tem versão nova?" — usado pela faixa de atualização (estilo app Claude desktop). */
+export async function checkUpdate(): Promise<UpdateStatus> {
+  return checkForUpdate(process.cwd())
+}
 
 /** Liga/desliga um plugin no settings.json (com backup + escrita segura). */
 export async function togglePlugin(key: string, on: boolean): Promise<ActionResult> {

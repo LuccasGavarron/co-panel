@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Hello from './Hello'
+import UpdateBanner from './UpdateBanner'
 import { togglePlugin, enablePlugins } from '../actions'
 import { buildBundle, validateBundle, planImport, type ImportPlan } from '../../core/bundle'
 import type {
@@ -96,6 +97,8 @@ export default function Panel({
           </button>
         ))}
       </nav>
+
+      <UpdateBanner />
 
       <section className="mt-6">
         {tab === 'setup' && <MeuSetup setup={setup} />}
