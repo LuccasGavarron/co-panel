@@ -59,3 +59,48 @@ body {
     transform: scale(0.97);
   }
 }
+
+/* Entrada assinatura: floreio desenhado (stroke-dashoffset) + wordmark subindo.
+   Mesmo mecanismo do apple-hello-effect; trocar por glifos de "hello" é só
+   substituir o path e manter o pathLength. */
+@keyframes cp-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes cp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cp-flourish {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: cp-draw 700ms var(--ease-out-expo) 140ms forwards;
+}
+.cp-rise {
+  animation: cp-rise var(--duration-panel) var(--ease-out-expo) both;
+}
+/* Entrada em cascata pra listas. */
+.cp-stagger > * {
+  animation: cp-rise var(--duration-panel) var(--ease-out-expo) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-flourish {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .cp-rise,
+  .cp-stagger > * {
+    animation: none;
+  }
+}

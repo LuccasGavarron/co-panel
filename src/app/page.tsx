@@ -1,13 +1,23 @@
-// Placeholder — vira o shell de 4 abas na Milestone 2 (Task 8/9).
-export default function Home() {
+import { getSetup, getContextView, getKnownMarketplaces } from '../adapters/host'
+import Panel from './components/Panel'
+import marketplaces from './data/marketplaces.json'
+
+// Lê a config VIVA do usuário a cada carga (nunca cacheia no build) — é uma ferramenta local.
+export const dynamic = 'force-dynamic'
+
+// Server component: lê o setup real da máquina e entrega ao painel (client).
+export default async function Home() {
+  const [setup, context, knownMarketplaces] = await Promise.all([
+    getSetup(),
+    getContextView(),
+    getKnownMarketplaces(),
+  ])
   return (
-    <main className="min-h-dvh grid place-items-center p-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">co-panel</h1>
-        <p className="mt-2 text-[var(--color-muted)]">
-          Veja, gerencie e compartilhe seu setup do Claude Code.
-        </p>
-      </div>
-    </main>
+    <Panel
+      setup={setup}
+      context={context}
+      marketplaces={marketplaces}
+      knownMarketplaces={knownMarketplaces}
+    />
   )
 }

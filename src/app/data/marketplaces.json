@@ -1,0 +1,22 @@
+[
+  {
+    "name": "claude-plugins-official",
+    "repo": "anthropics/claude-plugins-official",
+    "url": "https://github.com/anthropics/claude-plugins-official",
+    "description": "Marketplace oficial da Anthropic — superpowers, feature-dev, security, skill-creator e mais.",
+    "tags": ["oficial", "base"]
+  },
+  {
+    "name": "ponytail",
+    "repo": "DietrichGebert/ponytail",
+    "url": "https://github.com/DietrichGebert/ponytail",
+    "description": "Modo 'dev sênior preguiçoso': força a solução mais simples que funciona. Menos código, menos bloat.",
+    "tags": ["qualidade", "código"]
+  },
+  {
+    "name": "getdesign.md",
+    "url": "https://getdesign.md",
+    "description": "Catálogo de design systems (Apple, Nike, Claude, Airbnb…) em .md pra colar no prompt ou virar skill reutilizável.",
+    "tags": ["design", "skill"]
+  }
+]
