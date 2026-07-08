@@ -1,7 +1,7 @@
 {
   "name": "co-panel",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Painel local para ver, ligar/desligar e compartilhar seu setup do Claude Code.",
   "scripts": {
