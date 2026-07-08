@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import type { UsageMetrics, WindowMetrics, Breakdown } from '../../core/usage-metrics'
-import { getUsage } from '../actions'
+import { getUsage, getUsageSince } from '../actions'
+import { readResetAt } from '../lib/reset'
 
 function fmt(n: number): string {
   if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M'
@@ -10,16 +11,29 @@ function fmt(n: number): string {
   return String(n)
 }
 
-type Key = 'today' | 'week' | 'last5h'
+function fmtTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+type Key = 'today' | 'week' | 'last5h' | 'reset'
 
 export default function MetricsHeader({ usage }: { usage: UsageMetrics }) {
   const [open, setOpen] = useState<Key | null>('today')
   const [live, setLive] = useState<UsageMetrics>(usage)
+  // Reset manual: nulo até o mount ler o localStorage (sem mismatch de hidratação).
+  const [resetAt, setResetAt] = useState<number | null>(null)
+  const [since, setSince] = useState<WindowMetrics | null>(null)
 
   useEffect(() => {
-    const id = setInterval(() => {
+    const tick = () => {
       getUsage().then(setLive).catch(() => {}) // ponytail: silencia falha de poll, próximo tick tenta de novo
-    }, 5000)
+      const r = readResetAt()
+      setResetAt(r)
+      if (r != null) getUsageSince(r).then(setSince).catch(() => {})
+      else setSince(null)
+    }
+    tick() // roda já no mount pra o tile do reset aparecer sem esperar 5s
+    const id = setInterval(tick, 5000)
     return () => clearInterval(id)
   }, [])
 
@@ -28,6 +42,8 @@ export default function MetricsHeader({ usage }: { usage: UsageMetrics }) {
     { key: 'week', label: '7 dias', m: live.week },
     { key: 'last5h', label: 'Últimas 5h', m: live.last5h },
   ]
+  const hasReset = resetAt != null && since != null
+  if (hasReset) tiles.push({ key: 'reset', label: 'Desde o reset', m: since! })
   const active = tiles.find((t) => t.key === open)
 
   return (
@@ -36,7 +52,7 @@ export default function MetricsHeader({ usage }: { usage: UsageMetrics }) {
         <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)] animate-pulse motion-reduce:animate-none" />
         <span className="text-[11px] text-[var(--color-muted)]">ao vivo</span>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className={`grid gap-2 ${hasReset ? 'grid-cols-4' : 'grid-cols-3'}`}>
         {tiles.map((t) => (
           <button
             key={t.key}
@@ -54,6 +70,11 @@ export default function MetricsHeader({ usage }: { usage: UsageMetrics }) {
               <span className="ml-1 text-xs font-normal text-[var(--color-muted)]">tokens</span>
             </div>
             <div className="mt-1 text-[11px] text-[var(--color-muted)]">{t.m.count} chamadas</div>
+            {t.key === 'reset' && resetAt != null && (
+              <div className="mt-0.5 text-[11px] text-[var(--color-muted)]">
+                resetado {fmtTime(resetAt)}
+              </div>
+            )}
           </button>
         ))}
       </div>

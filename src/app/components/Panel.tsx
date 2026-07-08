@@ -402,6 +402,7 @@ function McpTab({ setup }: { setup: Setup }) {
 // ---------------- Contexto ----------------
 
 function Contexto({ context }: { context: { layers: ContextLayer[]; total: number } }) {
+  const [open, setOpen] = useState<number | null>(null)
   const max = Math.max(1, ...context.layers.map((l) => l.tokens))
   if (context.layers.length === 0) {
     return <Empty title="Nada no seu contexto ainda" hint="Aqui aparece o que o Claude recebe no prompt (CLAUDE.md, skills, memória) e quanto cada fonte custa em tokens." />
@@ -416,17 +417,36 @@ function Contexto({ context }: { context: { layers: ContextLayer[]; total: numbe
         <span className="text-sm"><span className="font-semibold">~{context.total.toLocaleString('pt-BR')}</span> tokens</span>
       </div>
       <ul className="cp-stagger space-y-2">
-        {context.layers.map((l, i) => (
-          <li key={`${l.source}-${i}`} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">{l.label}</span>
-              <span className="text-[var(--color-muted)]">~{l.tokens.toLocaleString('pt-BR')}</span>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-2)]">
-              <div className="h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${(l.tokens / max) * 100}%` }} />
-            </div>
-          </li>
-        ))}
+        {context.layers.map((l, i) => {
+          const isOpen = open === i
+          return (
+            <li key={`${l.source}-${i}`} className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+              <button
+                onClick={() => setOpen((o) => (o === i ? null : i))}
+                aria-expanded={isOpen}
+                className="w-full p-3 text-left"
+              >
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium">{l.label}</span>
+                  <span className="ml-auto text-[var(--color-muted)]">~{l.tokens.toLocaleString('pt-BR')}</span>
+                  <span className="shrink-0 text-[var(--color-muted)] transition-transform" style={{ transform: isOpen ? 'rotate(90deg)' : 'none' }}>
+                    <Chevron />
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+                  <div className="h-full rounded-full bg-[var(--color-accent)]" style={{ width: `${(l.tokens / max) * 100}%` }} />
+                </div>
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-3">
+                  <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-[var(--color-surface-2)] p-3 font-mono text-xs">
+                    {l.content || 'sem conteúdo'}
+                  </pre>
+                </div>
+              )}
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

@@ -15,6 +15,7 @@ import {
   newProfileId,
   enabledKeys,
 } from '../lib/profiles'
+import { readResetAt, writeResetAt, clearResetAt } from '../lib/reset'
 
 // Seletor de perfis (canto superior direito): troca o conjunto de plugins ligados;
 // mantém o exportar/importar de perfil (bundle) com revisão de segurança.
@@ -32,6 +33,8 @@ export default function ProfileMenu({
   // Estado começa nulo e é preenchido no client no mount (evita mismatch de hidratação).
   const [profiles, setProfiles] = useState<Profile[] | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  // Reset manual da assinatura: nulo até o mount ler o localStorage.
+  const [hasReset, setHasReset] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -52,6 +55,7 @@ export default function ProfileMenu({
     }
     setProfiles(list)
     setActiveId(id)
+    setHasReset(readResetAt() != null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -74,6 +78,21 @@ export default function ProfileMenu({
   function flash(msg: string, ms = 2500) {
     setToast(msg)
     setTimeout(() => setToast(null), ms)
+  }
+
+  /** Marca o reset manual da assinatura — métricas passam a contar a partir de agora. */
+  function markReset() {
+    setMenu(false)
+    writeResetAt(Date.now())
+    setHasReset(true)
+    flash('Reset marcado — métricas contam a partir de agora.')
+  }
+
+  function undoReset() {
+    setMenu(false)
+    clearResetAt()
+    setHasReset(false)
+    flash('Reset desfeito.')
   }
 
   /** Torna o perfil ativo e aplica os plugins que ele liga. */
@@ -226,6 +245,15 @@ export default function ProfileMenu({
             <button onClick={() => fileRef.current?.click()} className={item}>
               <Upload /> Importar perfil
             </button>
+            <div className="my-1 h-px bg-[var(--color-border)]" />
+            <button onClick={markReset} className={item}>
+              Minha assinatura resetou
+            </button>
+            {hasReset && (
+              <button onClick={undoReset} className={`${item} text-[var(--color-muted)]`}>
+                Desfazer reset
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -13,15 +13,20 @@ export interface ContextInputs {
   hooks?: { label: string; text: string }[]
 }
 
+const MAX_CONTENT = 20000
+function cap(text: string): string {
+  return text.length > MAX_CONTENT ? text.slice(0, MAX_CONTENT) + '\n… (cortado)' : text
+}
+
 export function computeContextLayers(inp: ContextInputs): ContextLayer[] {
   const layers: ContextLayer[] = []
 
   // Precedência: a ordem em que claudeMd[] chega já é a de precedência (global→projeto→...).
   for (const c of inp.claudeMd) {
-    layers.push({ source: 'claude-md', label: c.label, scope: c.scope, tokens: estimateTokens(c.text) })
+    layers.push({ source: 'claude-md', label: c.label, scope: c.scope, tokens: estimateTokens(c.text), content: cap(c.text) })
   }
   if (inp.memory) {
-    layers.push({ source: 'memory', label: inp.memory.label, scope: 'global', tokens: estimateTokens(inp.memory.text) })
+    layers.push({ source: 'memory', label: inp.memory.label, scope: 'global', tokens: estimateTokens(inp.memory.text), content: cap(inp.memory.text) })
   }
   if (inp.skills.length) {
     const text = inp.skills.map((s) => `${s.name}: ${s.description ?? ''}`).join('\n')
@@ -31,16 +36,17 @@ export function computeContextLayers(inp: ContextInputs): ContextLayer[] {
       scope: 'global',
       tokens: estimateTokens(text),
       detail: 'nome + descrição de cada skill',
+      content: cap(text),
     })
   }
   for (const p of inp.pluginInstructions ?? []) {
-    layers.push({ source: 'plugin-instructions', label: p.label, scope: 'global', tokens: estimateTokens(p.text) })
+    layers.push({ source: 'plugin-instructions', label: p.label, scope: 'global', tokens: estimateTokens(p.text), content: cap(p.text) })
   }
   for (const m of inp.mcpInstructions ?? []) {
-    layers.push({ source: 'mcp-instructions', label: m.label, scope: 'global', tokens: estimateTokens(m.text) })
+    layers.push({ source: 'mcp-instructions', label: m.label, scope: 'global', tokens: estimateTokens(m.text), content: cap(m.text) })
   }
   for (const h of inp.hooks ?? []) {
-    layers.push({ source: 'hooks', label: h.label, scope: 'global', tokens: estimateTokens(h.text) })
+    layers.push({ source: 'hooks', label: h.label, scope: 'global', tokens: estimateTokens(h.text), content: cap(h.text) })
   }
   return layers
 }

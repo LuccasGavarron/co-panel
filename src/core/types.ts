@@ -53,6 +53,7 @@ export interface ContextLayer {
   scope: Scope | 'global'
   tokens: number
   detail?: string
+  content?: string
 }
 
 export interface MarketplaceSource {

@@ -10,7 +10,7 @@ import {
 } from '../adapters/updater'
 import { ExternalChangeError } from '../ports/config-store'
 import { readUsage } from '../adapters/usage'
-import { aggregateUsage, type UsageMetrics } from '../core/usage-metrics'
+import { aggregateUsage, type UsageMetrics, type WindowMetrics } from '../core/usage-metrics'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
 
@@ -22,6 +22,12 @@ export async function getUsage(): Promise<UsageMetrics> {
   const windows = { dayStart: day.getTime(), weekStart, h5Start: now - 5*3600_000 }
   const { records } = await readUsage(weekStart)
   return aggregateUsage(records, windows)
+}
+
+/** Uso agregado desde o reset manual da assinatura (tudo desde `since`). */
+export async function getUsageSince(since: number): Promise<WindowMetrics> {
+  const { records } = await readUsage(since)
+  return aggregateUsage(records, { dayStart: since, weekStart: since, h5Start: since }).today
 }
 
 /** "Tem versão nova?" — usado pela faixa de atualização (estilo app Claude desktop). */
