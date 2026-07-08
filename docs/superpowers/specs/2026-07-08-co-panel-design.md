@@ -146,8 +146,14 @@ inviável no nativo.
   (ícones SVG do pack); `will-change` só no momento da animação.
 - **Tokens no `@theme`:** durações/curvas recorrentes viram tokens (`--ease-out-expo`,
   `--duration-fast`) pra consistência entre telas.
-- **Reels do Instagram:** **pendente** — o dono descreve a vibe (ou ficam como referência de
-  *sensação*, não de tela). Não consigo assistir vídeo atrás de login.
+- **Reels do Instagram (extraídos via Safari logado do dono):** contam uma história coerente —
+  (1) **designmotionhq**: motion/UI design dark, componentes polidos; (2) **synsation_**
+  ("Building With Good UX"): **empty states que ensinam** (já é regra na spec); (3)
+  **luizapagnossin**: usar **design system real** (Apple/Nike/Claude) via **`getdesign.md`** e
+  **virar skill** pra reusar. **Fio condutor:** UX de qualidade + reaproveitar design-system como
+  skill. **Aplicação:** basear o look num design system real (Apple/Claude via `getdesign.md`);
+  empty states que ensinam; **`getdesign.md` entra como fonte de destaque na aba Descobrir**
+  (catálogo de design systems em `.md` → viram skills). *(Só frames, não o movimento inteiro.)*
 
 ## 8. Robustez e segurança (onde NÃO somos preguiçosos)
 
