@@ -1,5 +1,16 @@
 import type { Metadata, Viewport } from 'next'
+import { Fraunces } from 'next/font/google'
 import './globals.css'
+
+// Fonte do wordmark: Fraunces (serifa display encorpada e com caráter). Auto-hospedada
+// no build — funciona offline depois.
+const wordmark = Fraunces({
+  subsets: ['latin'],
+  weight: ['900'],
+  style: ['normal'],
+  variable: '--font-wordmark',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'co-panel',
@@ -7,7 +18,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0b0d12',
+  themeColor: '#12100e',
 }
 
 export default function RootLayout({
@@ -16,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={wordmark.variable}>
       <body>{children}</body>
     </html>
   )

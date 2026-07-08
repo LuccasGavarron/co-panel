@@ -4,8 +4,10 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Hello from './Hello'
 import UpdateBanner from './UpdateBanner'
+import MetricsHeader from './MetricsHeader'
 import { togglePlugin, enablePlugins } from '../actions'
 import { buildBundle, validateBundle, planImport, type ImportPlan } from '../../core/bundle'
+import type { UsageMetrics } from '../../core/usage-metrics'
 import type {
   Setup,
   PluginRef,
@@ -58,12 +60,14 @@ export default function Panel({
   marketplaces,
   knownMarketplaces,
   appVersion,
+  usage,
 }: {
   setup: Setup
   context: { layers: ContextLayer[]; total: number }
   marketplaces: Discover[]
   knownMarketplaces: Record<string, MarketplaceSource>
   appVersion: string
+  usage: UsageMetrics
 }) {
   const [tab, setTab] = useState<Tab>('setup')
 
@@ -84,7 +88,7 @@ export default function Panel({
   return (
     <div className="flex min-h-dvh">
       {/* Sidebar — desktop */}
-      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] p-3 sm:flex">
+      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] p-3 sm:flex">
         <div className="px-1 pb-5 pt-1">
           <Hello />
         </div>
@@ -132,7 +136,8 @@ export default function Panel({
         </div>
 
         <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-6">
-          <section className="mt-4">
+          <MetricsHeader usage={usage} />
+          <section>
             {tab === 'setup' && <MeuSetup setup={setup} onDiscover={() => go('descobrir')} />}
             {tab === 'contexto' && <Contexto context={context} />}
             {tab === 'bundle' && <Bundle setup={setup} knownMarketplaces={knownMarketplaces} />}

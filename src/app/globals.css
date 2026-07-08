@@ -49,9 +49,9 @@ body {
 /* Wordmark com cara — serifa editorial (na linha do display serif do Claude),
    zero dependência (stack de sistema). */
 .wordmark {
-  font-family: "Hoefler Text", "Iowan Old Style", Cambria, Georgia, ui-serif, serif;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-family: var(--font-wordmark), "Hoefler Text", Georgia, ui-serif, serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 
 /* Feedback de toque imediato em tudo que é clicável. */
