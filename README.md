@@ -22,13 +22,29 @@ Quatro abas:
 - **Descobrir** — diretório curado das melhores fontes de plugins, skills e design systems
   (inclui [getdesign.md](https://getdesign.md)).
 
+## Instalar (você ou um amigo)
+
+Precisa de [Node.js](https://nodejs.org) e [Git](https://git-scm.com). Um comando baixa o repo,
+builda e cria o atalho na Área de Trabalho:
+
+**mac / Linux** (Terminal):
+```bash
+curl -fsSL https://raw.githubusercontent.com/LuccasGavarron/co-panel/main/scripts/install.sh | bash
+```
+
+**Windows** (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/LuccasGavarron/co-panel/main/scripts/install.ps1 | iex
+```
+
+**Ou peça pro Claude** (cole no Claude Code): _"Instale o co-panel: clone
+https://github.com/LuccasGavarron/co-panel, rode `npm install` e `npm run build`, e crie um atalho
+na minha Área de Trabalho que abre o painel em localhost:4571. Estou no mac/Windows."_
+
 ## Como abrir
 
-**Clique 2x** em `scripts/Abrir co-panel.command` (mac) ou `scripts/Abrir co-panel.bat` (Windows).
-Na primeira vez ele se prepara sozinho (instala e builda); depois abre direto no navegador em
-`http://localhost:4571`. Sem terminal no dia a dia.
-
-Precisa ter o [Node.js](https://nodejs.org) instalado.
+Depois de instalar: **dois cliques** no atalho `co-panel` da Área de Trabalho. Abre direto no
+navegador em `http://localhost:4571`. Sem terminal no dia a dia.
 
 ## Compartilhar com amigos
 
