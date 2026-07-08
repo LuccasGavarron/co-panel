@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Hello from './Hello'
 import UpdateBanner from './UpdateBanner'
 import MetricsHeader from './MetricsHeader'
+import ProfileMenu from './ProfileMenu'
 import { togglePlugin, enablePlugins } from '../actions'
 import { buildBundle, validateBundle, planImport, type ImportPlan } from '../../core/bundle'
 import type { UsageMetrics } from '../../core/usage-metrics'
@@ -136,6 +137,9 @@ export default function Panel({
         </div>
 
         <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-6">
+          <div className="mb-3 flex items-center justify-end">
+            <ProfileMenu setup={setup} knownMarketplaces={knownMarketplaces} />
+          </div>
           <MetricsHeader usage={usage} />
           <section>
             {tab === 'setup' && <MeuSetup setup={setup} onDiscover={() => go('descobrir')} />}

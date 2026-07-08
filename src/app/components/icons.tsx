@@ -90,6 +90,18 @@ export const Wrench = (p: SVGProps<SVGSVGElement>) => (
     <path d="M15 6a4 4 0 0 0-5.3 5.3L4 17l3 3 5.7-5.7A4 4 0 0 0 18 9l-2.2 2.2-2-2z" />
   </Base>
 )
+export const Dots = (p: SVGProps<SVGSVGElement>) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...p}>
+    <circle cx="12" cy="5" r="1.7" />
+    <circle cx="12" cy="12" r="1.7" />
+    <circle cx="12" cy="19" r="1.7" />
+  </svg>
+)
+export const X = (p: SVGProps<SVGSVGElement>) => (
+  <Base {...p}>
+    <path d="m6 6 12 12M18 6 6 18" />
+  </Base>
+)
 // Sunburst inspirado no símbolo do Claude — 12 raios a partir do centro.
 export const Spark = (p: SVGProps<SVGSVGElement>) => (
   <svg
