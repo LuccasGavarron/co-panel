@@ -48,6 +48,14 @@ export interface UpdateResult {
  */
 export async function applyUpdate(dir: string): Promise<UpdateResult> {
   try {
+    // Árvore suja → não clobbera; avisa claro em vez de erro cru do git.
+    const { stdout: dirty } = await run('git', ['-C', dir, 'status', '--porcelain'])
+    if (dirty.trim()) {
+      return {
+        ok: false,
+        message: 'Há mudanças locais não salvas no co-panel — atualize pelo terminal (git pull) ou descarte antes.',
+      }
+    }
     await run('git', ['-C', dir, 'pull', '--ff-only'], { timeout: 60_000 })
     await run('npm', ['--prefix', dir, 'install', '--no-audit', '--no-fund'], { timeout: 180_000 })
     await run('npm', ['--prefix', dir, 'run', 'build'], { timeout: 300_000 })

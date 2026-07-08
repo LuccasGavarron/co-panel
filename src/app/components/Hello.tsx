@@ -6,7 +6,7 @@ export default function Hello() {
     <div className="cp-rise flex items-center gap-2.5">
       <Spark className="size-9 shrink-0 text-[var(--color-accent)]" />
       <div className="inline-block">
-        <span className="wordmark block whitespace-nowrap text-2xl leading-none">co-panel</span>
+        <span className="wordmark block whitespace-nowrap text-3xl leading-none">co-panel</span>
         <svg
           className="mt-1 block w-full overflow-visible"
           viewBox="0 0 140 10"
