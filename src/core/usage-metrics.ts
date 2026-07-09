@@ -60,3 +60,29 @@ export function aggregateUsage(records: UsageRecord[], w: Windows): UsageMetrics
     last5h: summarize(records.filter((r) => r.ts >= w.h5Start)),
   }
 }
+
+/**
+ * Tokens somados por dia nos últimos 7 dias, do mais antigo (índice 0) ao hoje (6).
+ * Limites de dia = meia-noite local derivada de `now`. Label curto `dd/mm`. Puro.
+ */
+export function aggregateDaily(
+  records: UsageRecord[],
+  now: number,
+): { day: string; tokens: number }[] {
+  const midnight = new Date(now)
+  midnight.setHours(0, 0, 0, 0)
+  const out: { day: string; tokens: number }[] = []
+  for (let i = 6; i >= 0; i--) {
+    const from = new Date(midnight)
+    from.setDate(from.getDate() - i) // setDate lida com viradas de mês/ano/DST
+    const to = new Date(midnight)
+    to.setDate(to.getDate() - i + 1) // próxima meia-noite (dia de 23h/25h no DST fica certo)
+    const a = from.getTime()
+    const b = to.getTime()
+    const tokens = records.reduce((s, r) => (r.ts >= a && r.ts < b ? s + r.tokens : s), 0)
+    const dd = String(from.getDate()).padStart(2, '0')
+    const mm = String(from.getMonth() + 1).padStart(2, '0')
+    out.push({ day: `${dd}/${mm}`, tokens })
+  }
+  return out
+}

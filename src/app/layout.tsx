@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Fraunces } from 'next/font/google'
 import './globals.css'
+import ThemeToggle from './components/ThemeToggle'
 
 // Fonte do wordmark: Fraunces (serifa display encorpada e com caráter). Auto-hospedada
 // no build — funciona offline depois.
@@ -28,7 +29,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={wordmark.variable}>
-      <body>{children}</body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('copanel.theme');if(t==='light')document.documentElement.dataset.theme='light'}catch(e){}`,
+          }}
+        />
+      </head>
+      <body>
+        <ThemeToggle />
+        {children}
+      </body>
     </html>
   )
 }

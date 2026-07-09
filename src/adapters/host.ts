@@ -138,6 +138,28 @@ export async function readAssetContent(ownerKey: string, source: string): Promis
   }
 }
 
+/** Config crua de um servidor MCP (~/.claude.json). Só leitura, JSON pretty. */
+export async function readMcpDetail(name: string): Promise<string> {
+  try {
+    const cj = (await makeStore().readClaudeJson()).data as { mcpServers?: Record<string, unknown> }
+    const cfg = cj.mcpServers?.[name]
+    return cfg ? JSON.stringify(cfg, null, 2) : ''
+  } catch {
+    return ''
+  }
+}
+
+/** Config crua de um hook por evento (settings.json). Só leitura, JSON pretty. */
+export async function readHookDetail(event: string): Promise<string> {
+  try {
+    const s = (await makeStore().readSettings()).data as { hooks?: Record<string, unknown> }
+    const cfg = s.hooks?.[event]
+    return cfg ? JSON.stringify(cfg, null, 2) : ''
+  } catch {
+    return ''
+  }
+}
+
 /** Marketplaces já conhecidos (nome → fonte git), pra montar/planejar bundles. */
 export async function getKnownMarketplaces(): Promise<Record<string, MarketplaceSource>> {
   const store = makeStore()

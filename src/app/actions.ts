@@ -1,7 +1,7 @@
 'use server'
 
 import { setPluginEnabled, setEnabledPlugins as setEnabledPluginsCore } from '../core/toggle'
-import { makeStore, readAssetContent } from '../adapters/host'
+import { makeStore, readAssetContent, readMcpDetail, readHookDetail } from '../adapters/host'
 import {
   checkForUpdate,
   applyUpdate as runApplyUpdate,
@@ -10,7 +10,7 @@ import {
 } from '../adapters/updater'
 import { ExternalChangeError } from '../ports/config-store'
 import { readUsage } from '../adapters/usage'
-import { aggregateUsage, type UsageMetrics, type WindowMetrics } from '../core/usage-metrics'
+import { aggregateUsage, aggregateDaily, type UsageMetrics, type WindowMetrics } from '../core/usage-metrics'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
 
@@ -33,6 +33,23 @@ export async function getUsageSince(since: number): Promise<WindowMetrics> {
 /** Lê o conteúdo de um asset (skill/command/agent/workflow) pra ver na UI. */
 export async function getAssetContent(ownerKey: string, source: string): Promise<string> {
   return readAssetContent(ownerKey, source)
+}
+
+/** Detalhe cru de um servidor MCP pra ver na UI (só leitura). */
+export async function getMcpDetail(name: string): Promise<string> {
+  return readMcpDetail(name)
+}
+
+/** Detalhe cru de um hook por evento pra ver na UI (só leitura). */
+export async function getHookDetail(event: string): Promise<string> {
+  return readHookDetail(event)
+}
+
+/** Uso somado por dia nos últimos 7 dias (pro mini gráfico ao vivo). */
+export async function getUsageDaily(): Promise<{ day: string; tokens: number }[]> {
+  const now = Date.now()
+  const { records } = await readUsage(now - 7 * 24 * 3600_000)
+  return aggregateDaily(records, now)
 }
 
 /** Aplica um perfil: grava o mapa inteiro de enabledPlugins (liga E desliga). */

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import type { UsageMetrics, WindowMetrics, Breakdown } from '../../core/usage-metrics'
-import { getUsage, getUsageSince } from '../actions'
+import { getUsage, getUsageSince, getUsageDaily } from '../actions'
 import { readResetAt } from '../lib/reset'
 
+// Formato sem ambiguidade: 'mi' = milhão, 'k' = mil.
 function fmt(n: number): string {
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M'
+  if (n >= 1e6) return (n / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi'
   if (n >= 1e3) return Math.round(n / 1e3) + 'k'
   return String(n)
 }
@@ -23,10 +24,12 @@ export default function MetricsHeader({ usage }: { usage: UsageMetrics }) {
   // Reset manual: nulo até o mount ler o localStorage (sem mismatch de hidratação).
   const [resetAt, setResetAt] = useState<number | null>(null)
   const [since, setSince] = useState<WindowMetrics | null>(null)
+  const [daily, setDaily] = useState<{ day: string; tokens: number }[]>([])
 
   useEffect(() => {
     const tick = () => {
       getUsage().then(setLive).catch(() => {}) // ponytail: silencia falha de poll, próximo tick tenta de novo
+      getUsageDaily().then(setDaily).catch(() => {})
       const r = readResetAt()
       setResetAt(r)
       if (r != null) getUsageSince(r).then(setSince).catch(() => {})
@@ -81,6 +84,8 @@ export default function MetricsHeader({ usage }: { usage: UsageMetrics }) {
 
       {active && (active.m.tokens > 0 ? <Drill m={active.m} /> : <EmptyWindow />)}
 
+      {daily.length > 0 && <DailyChart data={daily} />}
+
       <p className="mt-2 px-1 text-[11px] text-[var(--color-muted)]">
         Uso local por tokens (input + saída + cache). O % oficial do limite diário/semanal vem da
         API do Claude — o co-panel é local e não acessa.
@@ -118,6 +123,30 @@ function BreakdownList({ title, items }: { title: string; items: Breakdown[] }) 
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+function DailyChart({ data }: { data: { day: string; tokens: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.tokens))
+  return (
+    <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <h4 className="mb-3 text-xs font-semibold text-[var(--color-muted)]">Uso por dia (7d)</h4>
+      <div className="flex items-end gap-2">
+        {data.map((d) => (
+          <div key={d.day} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+            {/* trilha de altura fixa; barra = fração do max via height (só style) */}
+            <div className="flex h-24 w-full items-end">
+              <div
+                className="w-full rounded-t-md bg-[var(--color-accent)]"
+                style={{ height: `${Math.max(2, (d.tokens / max) * 100)}%` }}
+                title={`${fmt(d.tokens)} tokens`}
+              />
+            </div>
+            <div className="text-[10px] text-[var(--color-muted)]">{d.day}</div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

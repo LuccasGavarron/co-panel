@@ -6,7 +6,7 @@ import Hello from './Hello'
 import UpdateBanner from './UpdateBanner'
 import MetricsHeader from './MetricsHeader'
 import ProfileMenu from './ProfileMenu'
-import { togglePlugin, getAssetContent } from '../actions'
+import { togglePlugin, getAssetContent, getMcpDetail, getHookDetail } from '../actions'
 import type {
   Setup,
   PluginRef,
@@ -399,12 +399,9 @@ function McpTab({ setup }: { setup: Setup }) {
         {setup.mcp.length === 0 ? (
           <p className="text-sm text-[var(--color-muted)]">Nenhum.</p>
         ) : (
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="cp-stagger grid gap-2 sm:grid-cols-2">
             {setup.mcp.map((m) => (
-              <li key={m.name} className="flex items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-                <span className="text-[var(--color-muted)]"><Mcp /></span>
-                <span className="font-medium">{m.name}</span>
-              </li>
+              <DetailRow key={m.name} name={m.name} Icon={Mcp} load={() => getMcpDetail(m.name)} />
             ))}
           </ul>
         )}
@@ -414,17 +411,52 @@ function McpTab({ setup }: { setup: Setup }) {
         {setup.hooks.length === 0 ? (
           <p className="text-sm text-[var(--color-muted)]">Nenhum.</p>
         ) : (
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="cp-stagger grid gap-2 sm:grid-cols-2">
             {setup.hooks.map((h) => (
-              <li key={h.event} className="flex items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-                <span className="text-[var(--color-muted)]"><Hook /></span>
-                <span className="font-medium">{h.event}</span>
-              </li>
+              <DetailRow key={h.event} name={h.event} Icon={Hook} load={() => getHookDetail(h.event)} />
             ))}
           </ul>
         )}
       </section>
     </div>
+  )
+}
+
+// Linha de MCP/hook que expande e mostra a config crua (só leitura). Mesmo padrão do AssetRow.
+function DetailRow({ name, Icon, load }: { name: string; Icon: typeof Plugin; load: () => Promise<string> }) {
+  const [open, setOpen] = useState(false)
+  const [content, setContent] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function toggle() {
+    const next = !open
+    setOpen(next)
+    if (next && content === null) {
+      setLoading(true)
+      try {
+        setContent(await load())
+      } catch {
+        setContent('')
+      }
+      setLoading(false)
+    }
+  }
+
+  return (
+    <li className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <button onClick={toggle} className="flex w-full items-center gap-2 p-3 text-left" aria-expanded={open}>
+        <span className="shrink-0 text-[var(--color-muted)]"><Icon /></span>
+        <span className="min-w-0 flex-1 truncate font-medium">{name}</span>
+        <span className="shrink-0 text-[var(--color-muted)] transition-transform" style={{ transform: open ? 'rotate(90deg)' : 'none' }}>
+          <Chevron />
+        </span>
+      </button>
+      {open && (
+        <pre className="mx-3 mb-3 max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-[var(--color-surface-2)] p-3 font-mono text-xs">
+          {loading ? 'carregando…' : content || 'sem conteúdo'}
+        </pre>
+      )}
+    </li>
   )
 }
 
