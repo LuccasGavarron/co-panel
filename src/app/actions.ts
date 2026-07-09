@@ -1,6 +1,6 @@
 'use server'
 
-import { setPluginEnabled } from '../core/toggle'
+import { setPluginEnabled, setEnabledPlugins as setEnabledPluginsCore } from '../core/toggle'
 import { makeStore, readAssetContent } from '../adapters/host'
 import {
   checkForUpdate,
@@ -33,6 +33,22 @@ export async function getUsageSince(since: number): Promise<WindowMetrics> {
 /** Lê o conteúdo de um asset (skill/command/agent/workflow) pra ver na UI. */
 export async function getAssetContent(ownerKey: string, source: string): Promise<string> {
   return readAssetContent(ownerKey, source)
+}
+
+/** Aplica um perfil: grava o mapa inteiro de enabledPlugins (liga E desliga). */
+export async function setEnabledPlugins(map: Record<string, boolean>): Promise<ActionResult> {
+  try {
+    const store = makeStore()
+    const settings = await store.readSettings()
+    const next = setEnabledPluginsCore(settings.data, map)
+    await store.writeSettings(next, settings.mtimeMs)
+    return { ok: true }
+  } catch (e) {
+    if (e instanceof ExternalChangeError) {
+      return { ok: false, error: 'A config mudou fora do co-panel. Recarregue e tente de novo.' }
+    }
+    return { ok: false, error: (e as Error).message }
+  }
 }
 
 /** "Tem versão nova?" — usado pela faixa de atualização (estilo app Claude desktop). */

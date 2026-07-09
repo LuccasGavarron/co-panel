@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { buildBundle, validateBundle, planImport, type ImportPlan } from '../../core/bundle'
 import type { Setup, MarketplaceSource } from '../../core/types'
-import { enablePlugins } from '../actions'
+import { enablePlugins, setEnabledPlugins } from '../actions'
 import { Download, Upload, Check, Warn, X } from './icons'
 import {
   type Profile,
@@ -101,9 +101,8 @@ export default function ProfileMenu({
     writeActiveId(p.id)
     setActiveId(p.id)
     start(async () => {
-      // Só liga os que o perfil pede.
-      // TODO: desligar os que não estão no perfil precisa de uma action setEnabledPlugins
-      const res = await enablePlugins(enabledKeys(p))
+      // Aplica o perfil inteiro: liga E desliga (grava o mapa completo).
+      const res = await setEnabledPlugins(p.enabledPlugins)
       if (res.ok) router.refresh()
       else flash(res.error, 3500)
     })

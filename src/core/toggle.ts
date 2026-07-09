@@ -11,3 +11,12 @@ export function setPluginEnabled<T extends Record<string, unknown>>(
     enabledPlugins: { ...current, [key]: on },
   } as T
 }
+
+// Define o mapa INTEIRO de enabledPlugins (troca de perfil: liga E desliga),
+// preservando todas as outras chaves do settings. Não muta a entrada.
+export function setEnabledPlugins<T extends Record<string, unknown>>(
+  settings: T,
+  map: Record<string, boolean>,
+): T {
+  return { ...settings, enabledPlugins: { ...map } } as T
+}
