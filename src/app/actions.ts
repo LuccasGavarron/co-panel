@@ -1,7 +1,15 @@
 'use server'
 
 import { setPluginEnabled, setEnabledPlugins as setEnabledPluginsCore } from '../core/toggle'
-import { makeStore, readAssetContent, readMcpDetail, readHookDetail } from '../adapters/host'
+import {
+  makeStore,
+  makeStoreFor,
+  ensureProjectClaudeDir,
+  getProjects,
+  readAssetContent,
+  readMcpDetail,
+  readHookDetail,
+} from '../adapters/host'
 import {
   checkForUpdate,
   applyUpdate as runApplyUpdate,
@@ -78,10 +86,18 @@ export async function applyUpdate(): Promise<UpdateResult> {
   return runApplyUpdate(process.cwd())
 }
 
-/** Liga/desliga um plugin no settings.json (com backup + escrita segura). */
-export async function togglePlugin(key: string, on: boolean): Promise<ActionResult> {
+/** Liga/desliga um plugin. Sem projectDir → settings global; com → settings do projeto. */
+export async function togglePlugin(key: string, on: boolean, projectDir?: string): Promise<ActionResult> {
   try {
-    const store = makeStore()
+    if (projectDir) {
+      // só grava em projeto REAL e conhecido (evita escrita em caminho arbitrário via ?project=)
+      const known = await getProjects()
+      if (!known.some((p) => p.path === projectDir)) {
+        return { ok: false, error: 'Projeto desconhecido — não vou gravar aí.' }
+      }
+      await ensureProjectClaudeDir(projectDir)
+    }
+    const store = makeStoreFor(projectDir)
     const settings = await store.readSettings()
     const next = setPluginEnabled(settings.data, key, on)
     await store.writeSettings(next, settings.mtimeMs)

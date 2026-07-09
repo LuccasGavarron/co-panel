@@ -32,6 +32,44 @@ async function readText(file: string): Promise<string | null> {
     return null
   }
 }
+async function readJsonFile(file: string): Promise<Record<string, unknown>> {
+  const raw = await readText(file)
+  if (!raw) return {}
+  try {
+    return JSON.parse(raw) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
+/** Store cujo settings.json aponta pro escopo escolhido (user global ou o do projeto). */
+export function makeStoreFor(projectDir?: string): FsConfigStore {
+  const p = resolveClaudePaths(os.homedir())
+  if (!projectDir) return new FsConfigStore(p)
+  return new FsConfigStore({ ...p, settings: path.join(projectDir, '.claude', 'settings.json') })
+}
+/** Garante que `<projeto>/.claude` existe antes de gravar o settings do projeto. */
+export async function ensureProjectClaudeDir(projectDir: string): Promise<void> {
+  await fs.mkdir(path.join(projectDir, '.claude'), { recursive: true })
+}
+
+/** Projetos que o usuário já usou (chaves de `projects` no ~/.claude.json que ainda existem). */
+export async function getProjects(): Promise<{ path: string; name: string }[]> {
+  try {
+    const cj = (await makeStore().readClaudeJson()).data as { projects?: Record<string, unknown> }
+    const out: { path: string; name: string }[] = []
+    for (const pth of Object.keys(cj.projects ?? {})) {
+      try {
+        if ((await fs.stat(pth)).isDirectory()) out.push({ path: pth, name: path.basename(pth) })
+      } catch {
+        /* projeto sumiu do disco */
+      }
+    }
+    return out.sort((a, b) => a.name.localeCompare(b.name))
+  } catch {
+    return []
+  }
+}
 async function listDir(dir: string): Promise<string[]> {
   try {
     return await fs.readdir(dir)
@@ -75,30 +113,55 @@ async function readAuthored(p: ClaudePaths): Promise<ProvidedAsset[]> {
   return out
 }
 
-export async function getSetup(): Promise<Setup> {
+export async function getSetup(projectDir?: string): Promise<Setup> {
   const store = makeStore()
   const [settings, installed, claudeJson] = await Promise.all([
     store.readSettings(),
     store.readInstalledPlugins(),
     store.readClaudeJson(),
   ])
-  const enabled = (settings.data.enabledPlugins ?? {}) as Record<string, boolean>
-  const plugins = await scanPlugins(installed.data as InstalledFile, enabled)
-  const authored = await readAuthored(hostPaths())
+  const userEnabled = (settings.data.enabledPlugins ?? {}) as Record<string, boolean>
+  let enabled = userEnabled
   const mcp: McpRef[] = Object.keys(
     (claudeJson.data.mcpServers ?? {}) as Record<string, unknown>,
   ).map((name) => ({ name, scope: 'user' }))
   const hooks: HookRef[] = Object.keys(
     (settings.data.hooks ?? {}) as Record<string, unknown>,
   ).map((event) => ({ event, scope: 'user' }))
+
+  if (projectDir) {
+    const p = resolveClaudePaths(os.homedir(), projectDir)
+    const projSettings = await readJsonFile(p.projectSettings!)
+    const projEnabled = (projSettings.enabledPlugins ?? {}) as Record<string, boolean>
+    // efetivo: global sobrescrito pelo override do projeto
+    enabled = { ...userEnabled, ...projEnabled }
+    for (const event of Object.keys((projSettings.hooks ?? {}) as Record<string, unknown>)) {
+      hooks.push({ event, scope: 'project' })
+    }
+    const projMcp = await readJsonFile(p.projectMcp!)
+    for (const name of Object.keys((projMcp.mcpServers ?? {}) as Record<string, unknown>)) {
+      mcp.push({ name, scope: 'project' })
+    }
+  }
+
+  const plugins = await scanPlugins(installed.data as InstalledFile, enabled)
+  const authored = await readAuthored(hostPaths())
   return { plugins, authored, mcp, hooks }
 }
 
-export async function getContextView(): Promise<{ layers: ContextLayer[]; total: number }> {
-  const setup = await getSetup()
+export async function getContextView(
+  projectDir?: string,
+): Promise<{ layers: ContextLayer[]; total: number }> {
+  const setup = await getSetup(projectDir)
   const claudeMd: { label: string; scope: 'global' | 'user' | 'project'; text: string }[] = []
   const globalMd = await readText(path.join(os.homedir(), '.claude', 'CLAUDE.md'))
   if (globalMd) claudeMd.push({ label: 'CLAUDE.md global (~/.claude)', scope: 'global', text: globalMd })
+  if (projectDir) {
+    const projMd = await readText(path.join(projectDir, 'CLAUDE.md'))
+    if (projMd) {
+      claudeMd.push({ label: `CLAUDE.md do projeto (${path.basename(projectDir)})`, scope: 'project', text: projMd })
+    }
+  }
 
   const skills = [
     ...setup.plugins.filter((p) => p.enabled).flatMap((p) => p.provides.filter((a) => a.kind === 'skill')),

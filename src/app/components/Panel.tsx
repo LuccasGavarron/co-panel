@@ -6,6 +6,7 @@ import Hello from './Hello'
 import UpdateBanner from './UpdateBanner'
 import MetricsHeader from './MetricsHeader'
 import ProfileMenu from './ProfileMenu'
+import ScopeSelector from './ScopeSelector'
 import { togglePlugin, getAssetContent, getMcpDetail, getHookDetail } from '../actions'
 import type {
   Setup,
@@ -55,6 +56,8 @@ export default function Panel({
   knownMarketplaces,
   appVersion,
   usage,
+  projects,
+  activeProject,
 }: {
   setup: Setup
   context: { layers: ContextLayer[]; total: number }
@@ -62,6 +65,8 @@ export default function Panel({
   knownMarketplaces: Record<string, MarketplaceSource>
   appVersion: string
   usage: UsageMetrics
+  projects: { path: string; name: string }[]
+  activeProject: string | null
 }) {
   const [tab, setTab] = useState<Tab>('setup')
 
@@ -128,11 +133,19 @@ export default function Panel({
         </div>
 
         <main className="w-full px-6 pb-24 pt-5 lg:px-10">
-          <div className="mb-4 flex items-center justify-end">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <ScopeSelector projects={projects} active={activeProject} />
             <ProfileMenu setup={setup} knownMarketplaces={knownMarketplaces} />
           </div>
 
-          {tab === 'setup' && <MeuSetup setup={setup} usage={usage} onDiscover={() => go('descobrir')} />}
+          {tab === 'setup' && (
+            <MeuSetup
+              setup={setup}
+              usage={usage}
+              onDiscover={() => go('descobrir')}
+              projectDir={activeProject ?? undefined}
+            />
+          )}
           {tab === 'skills' && <AssetsTab setup={setup} kind="skill" title="Skills" />}
           {tab === 'workflows' && <AssetsTab setup={setup} kind="workflow" title="Workflows" />}
           {tab === 'mcp' && <McpTab setup={setup} />}
@@ -197,7 +210,17 @@ function Empty({ title, hint, action }: { title: string; hint: string; action?: 
 
 // ---------------- Meu setup (home): métricas + plugins ----------------
 
-function MeuSetup({ setup, usage, onDiscover }: { setup: Setup; usage: UsageMetrics; onDiscover: () => void }) {
+function MeuSetup({
+  setup,
+  usage,
+  onDiscover,
+  projectDir,
+}: {
+  setup: Setup
+  usage: UsageMetrics
+  onDiscover: () => void
+  projectDir?: string
+}) {
   const router = useRouter()
   const [plugins, setPlugins] = useState(setup.plugins)
   const [q, setQ] = useState('')
@@ -215,7 +238,7 @@ function MeuSetup({ setup, usage, onDiscover }: { setup: Setup; usage: UsageMetr
     setError(null)
     setPlugins((prev) => prev.map((p) => (p.key === key ? { ...p, enabled: on } : p)))
     start(async () => {
-      const res = await togglePlugin(key, on)
+      const res = await togglePlugin(key, on, projectDir)
       if (!res.ok) {
         setPlugins((prev) => prev.map((p) => (p.key === key ? { ...p, enabled: !on } : p)))
         setError(res.error)
